@@ -6,16 +6,19 @@ namespace JMCapstone
     public class PotentialMovements
     {
         private List<Move> Movements;
-        private bool IsBlackPlayer;
-        private int[,] BoardState;
-        private bool CanCastle;
 
-        public List<Move> GetPotentialMovements(int[,] boardState, bool isBlackPlayer, bool canCastle)
+        private int[,] BoardState;
+        private bool IsBlackPlayer;
+        private bool CanCastle;
+        private bool PawnLeaped;
+
+        public List<Move> GetPotentialMovements(int[,] boardState, bool isBlackPlayer, bool canCastle, bool pawnLeaped)
         {
             Movements = new List<Move>();
             BoardState = boardState;
             IsBlackPlayer = isBlackPlayer;
             CanCastle = canCastle;
+            PawnLeaped = pawnLeaped;
 
             for (int i = 0; i < 8; i++)
             {
@@ -28,20 +31,20 @@ namespace JMCapstone
                             GetHorizontalVerticalMovements(i, j);
                             break;
                         case Constants.BlackKnight:
-
+                            GetKnightMovements(i, j);
                             break;
                         case Constants.BlackBishop:
                             GetDiagonalMovments(i, j);
                             break;
                         case Constants.BlackKing:
-                            
+                            GetKingMovements(i, j);
                             break;
                         case Constants.BlackQueen:
                             GetHorizontalVerticalMovements(i, j);
                             GetDiagonalMovments(i, j);
                             break;
                         case Constants.BlackPawn:
-
+                            GetPawnMovements(i, j);
                             break;
                     }
                 }
@@ -237,30 +240,309 @@ namespace JMCapstone
         }//getDiagonalMovements
 
 
-        private void GetPawnMovements()
+        private void GetPawnMovements(int x, int y)
         {
-            if (IsBlackPlayer)
-            {
 
+            int type = BoardState[x, y];
+            bool potentialUpgrade;
+
+            if (IsBlackPlayer)
+            {                
+                if(y == 6)
+                {
+                    potentialUpgrade = true;
+                }
+                else
+                {
+                    potentialUpgrade = false;
+                }
+                                
+                //check for forwards movement                
+                if (BoardState[x, y + 1] == Constants.None)
+                {
+                    Movements.Add(new Move(type, x, y, x, y + 1, false, potentialUpgrade, false)); //if area in front of it is clear it can move forward
+                    
+                    // if pawn is in the starting position and the area in front of it is clear it can move 2 spaces forwards
+                    if (y == 1 && BoardState[x, y + 2] == Constants.None) 
+                    {
+                        Movements.Add(new Move(type, x, y, x, y + 2, false, false, true));
+                    }
+
+                }
+
+                //check for pieces to the sides of the square in front of it for it to capture
+                if (x > 0)
+                {
+                    if (IsCapturable(type, BoardState[x + 1, y + 1]))
+                    {
+                        Movements.Add(new Move(type, x, y, x + 1, y + 1, true, potentialUpgrade, false));
+                    }
+                }
+                if (x < 7)
+                {
+                    if (IsCapturable(type, BoardState[x - 1, y + 1]))
+                    {
+                        Movements.Add(new Move(type, x, y, x - 1, y + 1, true, potentialUpgrade, false));
+                    }
+                }
+            }
+            else
+            {
+                if (y == 1)
+                {
+                    potentialUpgrade = true;
+                }
+                else
+                {
+                    potentialUpgrade = false;
+                }
+
+                //check for pieces to the sides of the square in front of it for it to capture
+                if (IsCapturable(type, BoardState[x + 1, y - 1]))
+                {
+                    Movements.Add(new Move(type, x, y, x + 1, y - 1, true, potentialUpgrade, false));
+                }
+                if (IsCapturable(type, BoardState[x - 1, y - 1]))
+                {
+                    Movements.Add(new Move(type, x, y, x - 1, y - 1, true, potentialUpgrade, false));
+                }
+
+                //check for forwards movement
+                if (BoardState[x, y - 1] == Constants.None)
+                {
+                    Movements.Add(new Move(type, x, y, x, y - 1, false, potentialUpgrade, false)); //if area in front of it is clear it can move forward
+
+                    // if pawn is in the starting position and the area in front of it is clear it can move 2 spaces forwards
+                    if (y == 6 && BoardState[x, y - 2] == Constants.None)
+                    {
+                        Movements.Add(new Move(type, x, y, x, y - 2, false, false, true));                        
+                    }
+                }
             }
         }
 
-        private void GetKnightMovements()
+        private void GetKnightMovements(int x, int y)
         {
+            int type = BoardState[x, y];
+
+            // +1x, +2y
+            if(y < 6 && x != 7)
+            {
+                if (BoardState[x + 1, y + 2] == Constants.None)
+                {
+                    Movements.Add(new Move(type, x, y, x + 1, y + 2, false));
+                }else if(IsCapturable(type, BoardState[x + 1, y + 2])){
+                    Movements.Add(new Move(type, x, y, x + 1, y + 2, true));
+
+                }
+            }
+
+            // +1x, -2y
+            if (y > 1 && x != 7)
+            {
+                if (BoardState[x + 1, y - 2] == Constants.None)
+                {
+                    Movements.Add(new Move(type, x, y, x + 1, y - 2, false));
+                }
+                else if (IsCapturable(type, BoardState[x + 1, y - 2]))
+                {
+                    Movements.Add(new Move(type, x, y, x + 1, y - 2, true));
+
+                }
+            }
+
+            // -1x, +2y
+            if (y < 6 && x > 0)
+            {
+                if (BoardState[x - 1, y + 2] == Constants.None)
+                {
+                    Movements.Add(new Move(type, x, y, x - 1, y + 2, false));
+                }
+                else if (IsCapturable(type, BoardState[x - 1, y + 2]))
+                {
+                    Movements.Add(new Move(type, x, y, x - 1, y + 2, true));
+
+                }
+            }
+
+            // -1x, -2y
+            if (y > 1 && x > 0)
+            {
+                if (BoardState[x - 1, y - 2] == Constants.None)
+                {
+                    Movements.Add(new Move(type, x, y, x - 1, y - 2, false));
+                }
+                else if (IsCapturable(type, BoardState[x - 1, y - 2]))
+                {
+                    Movements.Add(new Move(type, x, y, x - 1, y - 2, true));
+
+                }
+            }
+
+            // +2x, +1y
+            if (y < 7 && x < 6)
+            {
+                if (BoardState[x + 2, y + 1] == Constants.None)
+                {
+                    Movements.Add(new Move(type, x, y, x + 2, y + 1, false));
+                }
+                else if (IsCapturable(type, BoardState[x + 2, y +1]))
+                {
+                    Movements.Add(new Move(type, x, y, x + 2, y + 1, true));
+
+                }
+            }
+
+            // +2x, -1y
+            if (y > 0 && x < 6)
+            {
+                if (BoardState[x + 2, y - 1] == Constants.None)
+                {
+                    Movements.Add(new Move(type, x, y, x + 2, y - 1, false));
+                }
+                else if (IsCapturable(type, BoardState[x + 2, y - 1]))
+                {
+                    Movements.Add(new Move(type, x, y, x + 2, y - 1, true));
+
+                }
+            }
+
+            // -2x, +1y
+            if (y < 7 && x > 1)
+            {
+                if (BoardState[x - 2, y + 1] == Constants.None)
+                {
+                    Movements.Add(new Move(type, x, y, x - 2, y + 1, false));
+                }
+                else if (IsCapturable(type, BoardState[x - 2, y + 1]))
+                {
+                    Movements.Add(new Move(type, x, y, x - 2, y + 1, true));
+
+                }
+            }
+
+
+            // -2x, -1y
+            if (y > 0 && x > 1)
+            {
+                if (BoardState[x - 2, y + 1] == Constants.None)
+                {
+                    Movements.Add(new Move(type, x, y, x - 2, y - 1, false));
+                }
+                else if (IsCapturable(type, BoardState[x - 2, y - 1]))
+                {
+                    Movements.Add(new Move(type, x, y, x - 2, y - 1, true));
+
+                }
+            }
 
         }
 
-        private void GetKingMovements()
+        //Needs to deal with check. doesn't now
+        private void GetKingMovements(int x, int y)
         {
+            int type = BoardState[x, y];
+            //up
+            if (y != 7)
+            {
+                if(BoardState[x, y + 1] == Constants.None)
+                {
+                    Movements.Add(new Move(type, x, y, x , y + 1, false));
+                }
+                else if (IsCapturable(type, BoardState[x, y + 1]))
+                {
+                    Movements.Add(new Move(type, x, y, x, y + 1, true));
+                }
 
+                if(x != 7)
+                {
+                    if (BoardState[x + 1, y + 1] == Constants.None)
+                    {
+                        Movements.Add(new Move(type, x, y, x + 1, y + 1, false));
+                    }
+                    else if (IsCapturable(type, BoardState[x + 1, y + 1]))
+                    {
+                        Movements.Add(new Move(type, x, y, x + 1, y + 1, true));
+                    }
+                }
+
+                if(x!= 0)
+                {
+                    if (BoardState[x - 1, y + 1] == Constants.None)
+                    {
+                        Movements.Add(new Move(type, x, y, x - 1, y + 1, false));
+                    }
+                    else if (IsCapturable(type, BoardState[x - 1, y + 1]))
+                    {
+                        Movements.Add(new Move(type, x, y, x - 1, y + 1, true));
+                    }
+                }
+            }
+
+            if (x != 0)
+            {
+                if (BoardState[x - 1, y] == Constants.None)
+                {
+                    Movements.Add(new Move(type, x, y, x - 1, y, false));
+                }
+                else if (IsCapturable(type, BoardState[x - 1, y]))
+                {
+                    Movements.Add(new Move(type, x, y, x - 1, y, true));
+                }
+            }
+
+            if (x != 7)
+            {
+                if (BoardState[x + 1, y] == Constants.None)
+                {
+                    Movements.Add(new Move(type, x, y, x + 1, y, false));
+                }
+                else if (IsCapturable(type, BoardState[x + 1, y]))
+                {
+                    Movements.Add(new Move(type, x, y, x + 1, y, true));
+                }
+            }
+
+            if(y != 0)
+            {
+                if (BoardState[x, y - 1] == Constants.None)
+                {
+                    Movements.Add(new Move(type, x, y, x, y - 1, false));
+                }
+                else if (IsCapturable(type, BoardState[x, y - 1]))
+                {
+                    Movements.Add(new Move(type, x, y, x, y - 1, true));
+                }
+
+
+                if (x != 0)
+                {
+                    if (BoardState[x - 1, y - 1] == Constants.None)
+                    {
+                        Movements.Add(new Move(type, x, y, x - 1, y - 1, false));
+                    }
+                    else if (IsCapturable(type, BoardState[x - 1, y]))
+                    {
+                        Movements.Add(new Move(type, x, y, x - 1, y - 1, true));
+                    }
+                }
+
+                if (x != 7)
+                {
+                    if (BoardState[x + 1, y - 1] == Constants.None)
+                    {
+                        Movements.Add(new Move(type, x, y, x + 1, y - 1, false));
+                    }
+                    else if (IsCapturable(type, BoardState[x + 1, y - 1]))
+                    {
+                        Movements.Add(new Move(type, x, y, x + 1, y - 1, true));
+                    }
+                }
+            }
         }
-
-
-
-
-
-        
 
 
     }//PotentialMovements class
 }//NameSpace
+
+//if(BoardState[(((i%4) >> 1)%-3) * (((i >> 2) + 1)), (((i%2)%-3)+1) * (2-(i >> 2))] C# doesn't support negative mod operations :(
