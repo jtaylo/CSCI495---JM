@@ -62,7 +62,6 @@ namespace JMCapstone
             }
         }
 
-
         private void SpawnPiece(int x, int y, int piece)
         {
             Vector3 pos = Get3DCoordinates(x, y);
@@ -102,5 +101,3 @@ namespace JMCapstone
         
     }
 }
-
-

@@ -9,7 +9,7 @@ namespace JMCapstone
         // Piece ID values
         internal const int BlackRook = 0, BlackKnight = 1, BlackBishop = 2, BlackKing = 3, BlackQueen = 4,
             BlackPawn = 5, WhiteRook = 6, WhiteKnight = 7, WhiteBishop = 8, WhitekKing = 9, WhiteQueen = 10,
-            WhitePawn = 11, None = -1;
+            WhitePawn = 11, None = -1, BlackPawnLeap = -2, WhitePawnLeap = -3;
 
 
         public static readonly int[] defaultPosition = new int[] { Constants.BlackRook, Constants.BlackKnight, Constants.BlackBishop, Constants.BlackKing,
